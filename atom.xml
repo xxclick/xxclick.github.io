@@ -4,7 +4,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh-CN">
     <title type="text">个人杂货铺</title>
     <subtitle type="html"></subtitle>
-    <updated>2020-08-28T17:45:17&#43;08:00</updated>
+    <updated>2020-08-28T17:48:04&#43;08:00</updated>
     <id>http://xxclick.github.io/</id>
     <link rel="alternate" type="text/html" href="http://xxclick.github.io/" />
     <link rel="self" type="application/atom&#43;xml" href="http://xxclick.github.io/atom.xml" />
@@ -20,8 +20,8 @@
             <title type="text">贾里尼克的故事</title>
             <link rel="alternate" type="text/html" href="http://xxclick.github.io/posts/book_read/" />
             <id>http://xxclick.github.io/posts/book_read/</id>
-            <updated>2020-08-28T17:04:45&#43;08:00</updated>
-            <published>0001-01-01T00:00:00&#43;00:00</published>
+            <updated>2020-08-28T17:47:54&#43;08:00</updated>
+            <published>2020-08-28T16:23:23&#43;08:00</published>
             <author>
                     <name>xxclick</name>
                     <uri>http://xxclick.github.io/</uri>
