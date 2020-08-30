@@ -23,10 +23,127 @@
         
             <copyright>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)</copyright>
         
-        <lastBuildDate>Fri, 28 Aug 2020 17:48:04 &#43;0800</lastBuildDate>
+        <lastBuildDate>Sun, 30 Aug 2020 21:56:57 &#43;0800</lastBuildDate>
         
             <atom:link rel="self" type="application/rss&#43;xml" href="http://xxclick.github.io/rss.xml" />
         
+        
+            <item>
+                <title>Alpha合成</title>
+                <link>http://xxclick.github.io/posts/porter-duff_android/</link>
+                <guid isPermaLink="true">http://xxclick.github.io/posts/porter-duff_android/</guid>
+                <pubDate>Sat, 29 Aug 2020 13:42:05 &#43;0800</pubDate>
+                
+                
+                
+                    <description>&lt;p&gt;最近项目中要用到两个图片的合成，官方的API注释看的一脸懵逼，之前也一直没搞懂其中的原理。之后研究了一下，发现还是论文和维基里面讲的比较清除。这里做一下记录。&lt;/p&gt;
+&lt;p&gt;Android中的&lt;a href=&#34;https://developer.android.com/reference/android/graphics/PorterDuff.Mode&#34;&gt;PorterDuff&lt;/a&gt;类，前面的一段注释说明了其来源，作用。大致的意思是:Porter and Duff两个人发表的论文&lt;a href=&#34;https://keithp.com/~keithp/porterduff/p253-porter.pdf&#34;&gt;Compositing Digital Images&lt;/a&gt;里面发明了一种用于图像合成的算法。&lt;/p&gt;
+&lt;p&gt;这种算法需要本质上把每个像素ARGB中的Alpha通道描述图像的形状。当Alpha通道为1时，图像完全存在，当它为0时，图像根本不存在，而当介于两者之间时，图像则部分存在。所以在维基百科里面叫做Alpha合成。&lt;/p&gt;
+&lt;center class=&#34;half&#34;&gt;
+&lt;img src=&#34;http://xxclick.github.io/PD.png&#34; width=&#34;180&#34;/&gt; &lt;img src=&#34;http://xxclick.github.io/pd_area.png&#34; width=&#34;180&#34;/&gt;
+&lt;/center&gt;
+上图的混合之中，可以划分为4个区域，其中没有相交的直接不用计算，所以最终的公式为：
+&lt;p&gt;$A_{src}$·$C_{src}$ + $A_{dest}$·$C_{dest}$ + $A_{both}$·$C_{both}$&lt;/p&gt;
+&lt;p&gt;source/dest 为0或者source/dest本身的颜色，相交的部分为0，source，dest。
+其中Alpha和RGB的计算规则是一致的，12种常见的混合模式RGB值对应如下表：&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th align=&#34;center&#34;&gt;&lt;/th&gt;
+&lt;th align=&#34;center&#34;&gt;s&lt;/th&gt;
+&lt;th align=&#34;center&#34;&gt;d&lt;/th&gt;
+&lt;th align=&#34;center&#34;&gt;b&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td align=&#34;center&#34;&gt;Src&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;s&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;0&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;s&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align=&#34;center&#34;&gt;Atop&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;0&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;d&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;s&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align=&#34;center&#34;&gt;Over&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;s&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;d&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;s&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align=&#34;center&#34;&gt;In&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;0&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;0&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;s&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align=&#34;center&#34;&gt;Out&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;s&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;0&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;0&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align=&#34;center&#34;&gt;Dest&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;0&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;d&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;d&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align=&#34;center&#34;&gt;DestAtop&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;s&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;0&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;d&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align=&#34;center&#34;&gt;DestOver&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;s&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;d&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;d&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align=&#34;center&#34;&gt;DestIn&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;0&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;0&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;d&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align=&#34;center&#34;&gt;DestOut&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;0&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;d&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;0&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align=&#34;center&#34;&gt;Clear&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;0&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;0&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;0&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td align=&#34;center&#34;&gt;Xor&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;s&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;d&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;0&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;论文中both区域的取值并没有那么简单，可以根据一定的方式计算相交部分的颜色，所以API里面多出了&lt;a href=&#34;https://developer.android.com/reference/android/graphics/PorterDuff.Mode#LIGHTEN&#34;&gt;LIGHTEN&lt;/a&gt;等5种计算方式，其实也不止这些，只不过PorterDuff中就没在定义其他的了。&lt;/p&gt;
+</description>
+                
+                
+                
+                
+                
+                    
+                        
+                    
+                        
+                    
+                
+            </item>
         
             <item>
                 <title>贾里尼克的故事</title>
@@ -34,9 +151,7 @@
                 <guid isPermaLink="true">http://xxclick.github.io/posts/book_read/</guid>
                 <pubDate>Fri, 28 Aug 2020 16:23:23 &#43;0800</pubDate>
                 
-                    <author>reuixiy@gmail.com (xxclick)</author>
                 
-                <copyright>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)</copyright>
                 
                     <description>&lt;p&gt;吴军博士在《数学之美》里对自己的恩师的纪念  。 很感动 。电子版不全，手动敲了一部分。以下为原文。&lt;/p&gt;
 &lt;hr&gt;
