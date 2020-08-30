@@ -23,10 +23,87 @@
         
             <copyright>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)</copyright>
         
-        <lastBuildDate>Sun, 30 Aug 2020 21:56:57 &#43;0800</lastBuildDate>
+        <lastBuildDate>Sun, 30 Aug 2020 23:04:06 &#43;0800</lastBuildDate>
         
             <atom:link rel="self" type="application/rss&#43;xml" href="http://xxclick.github.io/rss.xml" />
         
+        
+            <item>
+                <title>Android优化</title>
+                <link>http://xxclick.github.io/posts/optimize/</link>
+                <guid isPermaLink="true">http://xxclick.github.io/posts/optimize/</guid>
+                <pubDate>Sun, 30 Aug 2020 22:22:48 &#43;0800</pubDate>
+                
+                
+                
+                    <description>&lt;p&gt;这是个很大的话题，官方有一系列的指导。重新阅读之后发现很多都跟正确的编码方式，或者说良好的编码习惯有关。&lt;/p&gt;
+&lt;h1 id=&#34;性能优化&#34;&gt;性能优化&lt;/h1&gt;
+&lt;p&gt;官网有一个 &lt;a href=&#34;https://developer.android.com/topic/performance&#34;&gt;性能专题&lt;/a&gt;。有一系列视频。youtube上讲的比较乱。&lt;a href=&#34;https://classroom.udacity.com/courses/ud825&#34;&gt;udacity&lt;/a&gt;上同一个人讲的比较有条理，还有相应的代码举例。当然文本的方式读起来更快,更符合自己的节奏。&lt;/p&gt;
+&lt;h2 id=&#34;1-绘制&#34;&gt;1. 绘制&lt;/h2&gt;
+&lt;p&gt;CPU处理input,measure,layout等之后，最后都要通过GPU栅格化绘制每一个像素点。所以就可以分别优化CPU，GPU：减少measure,layout的时间（ 更加扁平的布局）,在必要的时候才调用invalidate()；不要过度绘制（减少重复绘制的背景，限制绘制区域clipRect）。&lt;/p&gt;
+&lt;p&gt;绘制调试，开发者选项中有2个开关，一个用来看绘制各个阶段的时间，另一个用来查看过度绘制。&lt;/p&gt;
+&lt;h2 id=&#34;2-计算&#34;&gt;2. 计算&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;比较耗时的计算可以使用缓存，批处理。 这里更接近数据结构与算法，用空间复杂度，换取时间复杂度。比较典型的例子就是哈希表的来降低时间复杂度。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;UI线程阻塞，另外创建线程解决来解决。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;3-内存&#34;&gt;3. 内存&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;不能自动GC引起的内存泄露。用不到的对象要置null。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;频繁GC引起的内存抖动。初始分配，之后复用。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;计算和内存的有些问题很可能就是Java代码本生存在的问题。比如&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-Java&#34; data-lang=&#34;Java&#34;&gt;   &lt;span class=&#34;n&#34;&gt;StringBuilder&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;sb&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;new&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;StringBuilder&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;10000&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;String&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;rowAsStr&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;0&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;i&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;lotsOfInts&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;na&#34;&gt;length&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;+&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;+&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;{&lt;/span&gt;
+        &lt;span class=&#34;c1&#34;&gt;// sb + &amp;#34;, &amp;#34;;  这里会重新创建字符串，引起内存抖动
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;        &lt;span class=&#34;n&#34;&gt;sb&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;na&#34;&gt;append&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;, &amp;#34;&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;o&#34;&gt;}&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;rowAsStr&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;sb&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;na&#34;&gt;toString&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;;&lt;/span&gt;
+&lt;span class=&#34;o&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;4-电量&#34;&gt;4. 电量&lt;/h2&gt;
+&lt;p&gt;最不关心的就是这个问题。
+Job Scheduler&lt;/p&gt;
+&lt;hr&gt;
+&lt;h1 id=&#34;启动优化&#34;&gt;启动优化&lt;/h1&gt;
+&lt;p&gt;启动优化就要看启动的流程，官网上的一张图可以说明一切：
+&lt;img src=&#34;http://xxclick.github.io/cold-launch.png&#34; alt=&#34;launch&#34;&gt;&lt;/p&gt;
+&lt;p&gt;启动的流程：用户点击, 加载应用，显示窗口（本质上是个win win的背景是activity的主题背景）。主进程创建，applcation的oncreate(),主线程创建，avtivity的oncreate()(界面的初始化在这里)。&lt;/p&gt;
+</description>
+                
+                
+                
+                
+                
+                    
+                        
+                    
+                        
+                    
+                
+            </item>
         
             <item>
                 <title>Alpha合成</title>
