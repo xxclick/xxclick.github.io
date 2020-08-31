@@ -4,7 +4,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh-CN">
     <title type="text">个人杂货铺</title>
     <subtitle type="html"></subtitle>
-    <updated>2020-08-30T23:04:06&#43;08:00</updated>
+    <updated>2020-08-31T09:25:55&#43;08:00</updated>
     <id>http://xxclick.github.io/</id>
     <link rel="alternate" type="text/html" href="http://xxclick.github.io/" />
     <link rel="self" type="application/atom&#43;xml" href="http://xxclick.github.io/atom.xml" />
@@ -17,10 +17,10 @@
     <rights>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)</rights>
     <generator uri="https://gohugo.io/" version="0.64.1">Hugo</generator>
         <entry>
-            <title type="text">Android优化</title>
+            <title type="text">关于优化</title>
             <link rel="alternate" type="text/html" href="http://xxclick.github.io/posts/optimize/" />
             <id>http://xxclick.github.io/posts/optimize/</id>
-            <updated>2020-08-30T23:03:09&#43;08:00</updated>
+            <updated>2020-08-31T08:41:19&#43;08:00</updated>
             <published>2020-08-30T22:22:48&#43;08:00</published>
             
             <summary type="html">这是个很大的话题，官方有一系列的指导。重新阅读之后发现很多都跟正确的编码方式，或者说……</summary>
@@ -80,6 +80,84 @@ Job Scheduler&lt;/p&gt;
 &lt;p&gt;启动优化就要看启动的流程，官网上的一张图可以说明一切：
 &lt;img src=&#34;http://xxclick.github.io/cold-launch.png&#34; alt=&#34;launch&#34;&gt;&lt;/p&gt;
 &lt;p&gt;启动的流程：用户点击, 加载应用，显示窗口（本质上是个win win的背景是activity的主题背景）。主进程创建，applcation的oncreate(),主线程创建，avtivity的oncreate()(界面的初始化在这里)。&lt;/p&gt;
+&lt;hr&gt;
+&lt;h1 id=&#34;android中的线程&#34;&gt;Android中的线程&lt;/h1&gt;
+&lt;p&gt;优化有一个绕不过去的点就是线程, Android沿用了Java的Thread，和线程池，并且引入了Handler-loop机制（本质就是死循环），将消息机制引入单个线程中，使得线程可复用。&lt;/p&gt;
+&lt;h2 id=&#34;操作系统层面&#34;&gt;操作系统层面&lt;/h2&gt;
+&lt;p&gt;操作系统层面，计算机的资源有划分为：CPU（计算），内存（存储），其他（I/O设备,总线等）。&lt;/p&gt;
+&lt;p&gt;对于CPU而言，分为单核和多核。可以引出线程的2个概念。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;并发（concurrency）：  交替执行 对于单核CPU而言。比如：2个线程交替获取CPU的时间片。&lt;/li&gt;
+&lt;li&gt;并行（parallelism）： 可以一起运行 对于多核CPU而言。比如：线程1获取CPU1的时间片，线程2获取CPU2的时间片在同一时间共同执行。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;对于内存而言，分为RAM和ROM。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;RAM：运行内存。其中内存的分配，映射，回收都是需要很深入研究的话题。Android中有2个常见的问题：内存的泄露和内存的抖动。&lt;/li&gt;
+&lt;li&gt;ROM：磁盘。用于文件，数据库的存放。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;hr&gt;
+&lt;p&gt;进程是资源分配的基本单位.线程是执行和调度的基本单位。这句话翻译翻译就是：CPU，内存，其他资源都是以线程为基本单位进行分配的，而线程是使用CPU的基本单位。
+所以理论上，在线程的优先级相同的情况下，进程中的线程越多，能获取CPU执行的时间越长。但线程越多，程序的同步逻辑更复杂，创建和销毁线程的时间消耗也就越多。&lt;/p&gt;
+&lt;p&gt;线程根据相关资源（主要是CPU和I/O设备,总线，互斥资源。为什么没有内存呢？ 如果没分配内存，怎么会有线程）的有无，划分为：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;就绪： 没有CPU，其他资源都有。&lt;/li&gt;
+&lt;li&gt;运行： 获取CPU ，其他资源都有。&lt;/li&gt;
+&lt;li&gt;阻塞： 没有CPU，没有其他资源。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;可以看到：只有当线程的其他资源都满足了，才会分配CPU，从这个角度也一定程度的说明了：线程是执行和调度的基本单位。&lt;/p&gt;
+&lt;h2 id=&#34;java层面&#34;&gt;Java层面&lt;/h2&gt;
+&lt;p&gt;Java虚拟机中的线程是基于优先级的抢占式调度的，但到了操作系统层面却不一定和Java虚拟机表现一致，操作系统可能是基于时间片轮转的非抢占式调度。所以Java的调度算法是不能保证的。&lt;/p&gt;
+&lt;p&gt;Java在语言层面提供了Thread类用于创建线程，有且仅有Thread类能创建线程。还提供了一些用于定义线程处理逻辑和更好的管理线程的类和接口：Callable，Runnable，Future，Executor。&lt;/p&gt;
+&lt;p&gt;Java为了方便还扩展了线程的状态：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// Java中线程的状态 多了：新建，终止，TIMED_WAITING
+public enum State {
+	// The thread has been created, but has never been started.
+	NEW, 新建
+	// The thread may be run.
+	RUNNABLE,
+	// The thread is blocked and waiting for a lock.
+	BLOCKED,
+	// The thread is waiting.
+	WAITING,
+	// The thread is waiting for a specified amount of time.
+	TIMED_WAITING,
+	// The thread has been terminated.
+	TERMINATED  终止
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Thread 中的stop()，suspend()，resume()，由早期Java的考虑不周，会引起不安全（没有解决同步和死锁）。已弃用。&lt;/p&gt;
+&lt;p&gt;Java中“锁”表示程序中互斥对象和类，代码块的访问权限。例如：获得某个对象的“锁” == 可以读取该对象（写入则要看锁的类型）&lt;/p&gt;
+&lt;p&gt;sleep()和join()都是通过synchronized关键字实现，本质就是访问互斥对象。例如：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 比如： 主线程中调用另一个线程的join()方法，lock对象的wait()方法，使主线程进入阻塞状态。
+public final void join() throws InterruptedException {
+	synchronized (lock) {
+		while (isAlive()) {
+			lock.wait();
+		}
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;yield()：线程（相对于优先级相同的线程）放弃运行，将CPU的控制权让出。&lt;/p&gt;
+&lt;p&gt;Thread 没有直接控制线程状态的方法（stop()等不安全）。都是通过控制互斥资源，间接控制线程的状态（sleep()和join()）。如果一个线程要停止，只能使用中断机制，在run()方法里面写判断逻辑，跳出run()方法,使其正常退出。其实也不优雅。&lt;/p&gt;
+&lt;p&gt;Thread的start()方法会调用run()方法。run()方法默认会调用Runnable接口。&lt;/p&gt;
+&lt;p&gt;Executor线程池是在1.5之后引入，目的就是更好的控制线程，比如优雅的退出线程，复用线程(不用在创建和销毁线程池上花费时间)等。
+Callable，Future本质上都是在Thread里的run()方法里做一些事，和中断处理类似。&lt;/p&gt;
+&lt;h2 id=&#34;java中线程的安全&#34;&gt;Java中线程的安全&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;线程角度：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;线程安全要保证3个特性： 原子性，可见性(读结果一致)，有序性（禁止指令重排，在一个线程内按顺序执行）。
+两个原子性的操作组合在一起不一定具有原子性。例如：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;// 不为空 加入map 加入操作 containKey和put是原子操作 需要加锁才能保证安全
+ if (!map.containsKey(key)){
+	 map.put(key, value); // containKey和put是原子操作 需要加锁(synchronized)才能保证安全
+ }
+&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
+&lt;ul&gt;
+&lt;li&gt;资源角度：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;synchronized关键字锁的是相应的资源（某一个对象，静态方法，类对象），没有获取相应资源的线程会被阻塞。&lt;/p&gt;
+&lt;p&gt;有一个比较绕的：对于同一个类A，线程1争夺A对象实例的对象锁，线程2争夺类A的类锁(A的class对象)，这两者不存在竞争关系。相互不干扰。&lt;/p&gt;
+&lt;p&gt;静态方法和类锁表现一致。&lt;/p&gt;
+&lt;p&gt;Java1.5以后引入java.util.concurrent并发包。在读和写方面做了优化，允许多个一起读 ;一个写和多个读一起。 提高了并发性 ，减小了锁粒度。 （没有仔细研究，待后续研究）&lt;/p&gt;
 </content>
             
             
