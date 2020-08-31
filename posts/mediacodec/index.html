@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+    <meta charset="UTF-8" />
+
+    <meta name="generator" content="Hugo 0.64.1" /><meta name="theme-color" content="#fff" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
+    
+    <meta http-equiv="Cache-Control" content="no-transform" />
+    
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+
+    <title>Android中音视频编解码 | 个人杂货铺</title>
+
+    <link rel="stylesheet" href="/css/meme.min.aa14ec81bbe3fec554204250fca294b3f37ad874ef19b168ba57b90f7093c84b.css" integrity="sha256-qhTsgbvj/sVUIEJQ/KKUs/N62HTvGbFoule5D3CTyEs=" />
+
+    
+    
+        <script src="/js/meme.min.434274bb2302fe029f98d3d29ae57dab1566be565436f52a6dd93089085533c4.js" integrity="sha256-Q0J0uyMC/gKfmNPSmuV9qxVmvlZUNvUqbdkwiQhVM8Q="></script>
+
+    
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB&#43;Garamond:ital,wght@0,400;0,500;0,700;1,400;1,700&amp;family=Noto&#43;Serif&#43;SC:wght@400;500;700&amp;family=Source&#43;Code&#43;Pro:ital,wght@0,400;0,700;1,400;1,700&amp;display=swap" media="print" onload="this.media='all'" />
+        <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB&#43;Garamond:ital,wght@0,400;0,500;0,700;1,400;1,700&amp;family=Noto&#43;Serif&#43;SC:wght@400;500;700&amp;family=Source&#43;Code&#43;Pro:ital,wght@0,400;0,700;1,400;1,700&amp;display=swap" /></noscript>
+
+    <meta name="author" content="xxclick" /><meta name="description" content="官方的MediaCodec大概讲了一下原理，还有两个google员工们的“非”官方的……" />
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#2a6df4" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="个人杂货铺" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="个人杂货铺" />
+    <meta name="msapplication-starturl" content="../../" />
+    <meta name="msapplication-TileColor" content="#fff" />
+    <meta name="msapplication-TileImage" content="../../icons/mstile-150x150.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    
+    
+
+    
+    <link rel="canonical" href="http://xxclick.github.io/posts/mediacodec/" />
+    
+
+    
+    
+
+    
+</head>
+
+    <body>
+        <div class="container">
+            
+    <header class="header">
+        
+            <div class="header-wrapper">
+                <div class="header-inner single">
+                    
+    <div class="site-brand">
+        
+            <a href="/" class="brand">个人杂货铺</a>
+        
+    </div>
+
+                    <nav class="nav">
+    <ul class="menu" id="menu">
+        
+            
+        
+        
+        
+        
+            
+                <li class="menu-item"><a href="/posts/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon archive"><path d="M32 448c0 17.7 14.3 32 32 32h384c17.7 0 32-14.3 32-32V160H32v288zm160-212c0-6.6 5.4-12 12-12h104c6.6 0 12 5.4 12 12v8c0 6.6-5.4 12-12 12H204c-6.6 0-12-5.4-12-12v-8zM480 32H32C14.3 32 0 46.3 0 64v48c0 8.8 7.2 16 16 16h480c8.8 0 16-7.2 16-16V64c0-17.7-14.3-32-32-32z"/></svg><span class="menu-item-name">文章</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/categories/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon th"><path d="M149.333 56v80c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24V56c0-13.255 10.745-24 24-24h101.333c13.255 0 24 10.745 24 24zm181.334 240v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm32-240v80c0 13.255 10.745 24 24 24H488c13.255 0 24-10.745 24-24V56c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24zm-32 80V56c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm-205.334 56H24c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24zM0 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H24c-13.255 0-24 10.745-24 24zm386.667-56H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zm0 160H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zM181.333 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24z"/></svg><span class="menu-item-name">分类</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/tags/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" class="icon tags"><path d="M497.941 225.941L286.059 14.059A48 48 0 0 0 252.118 0H48C21.49 0 0 21.49 0 48v204.118a48 48 0 0 0 14.059 33.941l211.882 211.882c18.744 18.745 49.136 18.746 67.882 0l204.118-204.118c18.745-18.745 18.745-49.137 0-67.882zM112 160c-26.51 0-48-21.49-48-48s21.49-48 48-48 48 21.49 48 48-21.49 48-48 48zm513.941 133.823L421.823 497.941c-18.745 18.745-49.137 18.745-67.882 0l-.36-.36L527.64 323.522c16.999-16.999 26.36-39.6 26.36-63.64s-9.362-46.641-26.36-63.64L331.397 0h48.721a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882z"/></svg><span class="menu-item-name">标签</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/about/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" class="icon user-circle"><path d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 96c48.6 0 88 39.4 88 88s-39.4 88-88 88-88-39.4-88-88 39.4-88 88-88zm0 344c-58.7 0-111.3-26.6-146.5-68.2 18.8-35.4 55.6-59.8 98.5-59.8 2.4 0 4.8.4 7.1 1.1 13 4.2 26.6 6.9 40.9 6.9 14.3 0 28-2.7 40.9-6.9 2.3-.7 4.7-1.1 7.1-1.1 42.9 0 79.7 24.4 98.5 59.8C359.3 421.4 306.7 448 248 448z"/></svg><span class="menu-item-name">关于</span></a>
+                </li>
+            
+        
+            
+                
+                    
+                    
+                        <li class="menu-item">
+                            <a id="theme-switcher" href="#"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon theme-icon-light"><path d="M193.2 104.5l48.8-97.5a18 18 0 0128 0l48.8 97.5 103.4 -34.5a18 18 0 0119.8 19.8l-34.5 103.4l97.5 48.8a18 18 0 010 28l-97.5 48.8 34.5 103.4a18 18 0 01-19.8 19.8l-103.4-34.5-48.8 97.5a18 18 0 01-28 0l-48.8-97.5l-103.4 34.5a18 18 0 01-19.8-19.8l34.5-103.4-97.5-48.8a18 18 0 010-28l97.5-48.8-34.5-103.4a18 18 0 0119.8-19.8zM256 128a128 128 0 10.01 0M256 160a96 96 0 10.01 0"/></svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon theme-icon-dark"><path d="M27 412a256 256 0 10154-407a11.5 11.5 0 00-5 20a201.5 201.5 0 01-134 374a11.5 11.5 0 00-15 13"/></svg></a>
+                        </li>
+                    
+                
+            
+        
+            
+                
+            
+        
+    </ul>
+</nav>
+
+                    
+                </div>
+            </div>
+            
+    <input type="checkbox" id="nav-toggle" aria-hidden="true" />
+    <label for="nav-toggle" class="nav-toggle"></label>
+    <label for="nav-toggle" class="nav-curtain"></label>
+
+
+        
+    </header>
+
+
+
+
+            
+            
+    <main class="main single" id="main">
+    <div class="main-inner">
+
+        
+
+        <article class="content post" data-align="justify" data-type="posts" data-toc-num="true">
+
+            <h1 class="post-title">Android中音视频编解码</h1>
+
+            
+
+            
+                
+            
+
+            
+                
+
+<div class="post-meta">
+    
+    
+    
+    
+        
+        
+        
+            
+        
+    
+    
+    
+    
+    
+</div>
+
+            
+
+            <div class="post-body">
+              <p>官方的<a href="https://developer.android.com/reference/android/media/MediaCodec.html" target="_blank" rel="noopener">MediaCodec</a>大概讲了一下原理，还有两个google员工们的“非”官方的使用demo：<a href="https://github.com/google/grafika" target="_blank" rel="noopener">grafika</a>和<a href="https://www.bigflake.com/mediacodec/" target="_blank" rel="noopener">bigflake</a>。在README中自己的员工都吐槽不好用，和一些兼容性问题。</p>
+<p>编码的流程都是一致的：</p>
+<ol>
+<li>创建，和配置MediaCodec对象。</li>
+<li>在死循环里面不断拿到输入buffer，然后写到输出buffer。</li>
+<li>最后释放资源，消除MediaCodec对象。</li>
+</ol>
+<h3 id="初始化"><a href="#初始化" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>初始化</h3>
+<p>首先需要查询设备本身支持的配置</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-Java" data-lang="Java"><span class="c1">// 查询
+</span><span class="c1"></span><span class="n">MediaCodecInfo</span> <span class="n">encodeCodecInfo</span><span class="o">;</span>
+<span class="kt">int</span> <span class="n">numCodecs</span> <span class="o">=</span> <span class="n">MediaCodecList</span><span class="o">.</span><span class="na">getCodecCount</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+    <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">numCodecs</span><span class="o">;</span> <span class="n">i</span><span class="o">+</span><span class="o">+</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">MediaCodecInfo</span> <span class="n">codecInfo</span> <span class="o">=</span> <span class="n">MediaCodecList</span><span class="o">.</span><span class="na">getCodecInfoAt</span><span class="o">(</span><span class="n">i</span><span class="o">)</span><span class="o">;</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="o">!</span><span class="n">codecInfo</span><span class="o">.</span><span class="na">isEncoder</span><span class="o">(</span><span class="o">)</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">continue</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="n">String</span><span class="o">[</span><span class="o">]</span> <span class="n">types</span> <span class="o">=</span> <span class="n">codecInfo</span><span class="o">.</span><span class="na">getSupportedTypes</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+        <span class="k">for</span> <span class="o">(</span><span class="n">String</span> <span class="n">type</span> <span class="o">:</span> <span class="n">types</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">type</span><span class="o">.</span><span class="na">equalsIgnoreCase</span><span class="o">(</span><span class="s">&#34;video/avc&#34;</span><span class="o">)</span><span class="o">)</span> <span class="o">{</span>  <span class="c1">// audio/mp4a-latm
+</span><span class="c1"></span>                <span class="n">encodeCodecInfo</span> <span class="o">=</span> <span class="n">codecInfo</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+<span class="c1">// 配置  宽高这里要做字节对齐，16的倍数
+</span><span class="c1"></span><span class="n">MediaFormat</span> <span class="n">videoFormat</span> <span class="o">=</span> <span class="n">MediaFormat</span><span class="o">.</span><span class="na">createVideoFormat</span><span class="o">(</span><span class="s">&#34;video/avc&#34;</span><span class="o">)</span><span class="o">,</span> <span class="c1">// audio/mp4a-latm.,
+</span><span class="c1"></span>            <span class="n">frameRect</span><span class="o">.</span><span class="na">width</span><span class="o">(</span><span class="o">)</span><span class="o">,</span> <span class="n">frameRect</span><span class="o">.</span><span class="na">height</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>  
+<span class="n">videoFormat</span><span class="o">.</span><span class="na">setInteger</span><span class="o">(</span><span class="n">MediaFormat</span><span class="o">.</span><span class="na">KEY_COLOR_FORMAT</span><span class="o">,</span>  <span class="n">MediaCodecInfo</span><span class="o">.</span><span class="na">CodecCapabilities</span><span class="o">.</span><span class="na">COLOR_FormatSurface</span><span class="o">)</span><span class="o">;</span>
+<span class="c1">//视频的其他配置 KEY_BIT_RATE比特率, KEY_FRAME_RATE帧率, KEY_I_FRAME_INTERVAL关键帧
+</span><span class="c1"></span><span class="c1">//音频的配置 KEY_CHANNEL_MASK, KEY_CHANNEL_COUNT, KEY_MAX_INPUT_SIZE(这个最好先查询一下手机支持的值， 华为这个值比较小)
+</span></code></pre></td></tr></table></div>
+</div>
+</div><p>创建MediaCodec</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-Java" data-lang="Java"><span class="n">videoEncoder</span> <span class="o">=</span> <span class="n">MediaCodec</span><span class="o">.</span><span class="na">createByCodecName</span><span class="o">(</span><span class="n">codecInfo</span><span class="o">.</span><span class="na">getName</span><span class="o">(</span><span class="o">)</span><span class="o">)</span><span class="o">;</span>
+<span class="n">videoEncoder</span><span class="o">.</span><span class="na">configure</span><span class="o">(</span><span class="n">videoFormat</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="n">MediaCodec</span><span class="o">.</span><span class="na">CONFIGURE_FLAG_ENCODE</span><span class="o">)</span><span class="o">;</span>
+<span class="n">surface</span> <span class="o">=</span> <span class="n">videoEncoder</span><span class="o">.</span><span class="na">createInputSurface</span><span class="o">(</span><span class="o">)</span><span class="o">;</span> <span class="c1">// 自己创建surface后往里面写内容，
+</span><span class="c1"></span><span class="c1">// videoEncoder.setInputSurface() // 已有surface拿里面的内容
+</span><span class="c1"></span>
+<span class="c1">// 混合
+</span><span class="c1"></span><span class="n">muxer</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MediaMuxer</span><span class="o">(</span><span class="n">mMP4Path</span><span class="o">,</span> <span class="n">MediaMuxer</span><span class="o">.</span><span class="na">OutputFormat</span><span class="o">.</span><span class="na">MUXER_OUTPUT_MPEG_4</span><span class="o">)</span><span class="o">;</span>
+</code></pre></td></tr></table></div>
+</div>
+</div><h3 id="读写数据"><a href="#读写数据" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a>读写数据</h3>
+<p>这里是一块模版代码，异步的不断读取，和写入数据。有个比较重要的就是时间戳的设置，暂停，播放要重新设置时间戳，如果音频要和视频混合还要同步相应的presentationTimeUs。</p>
+<div class="highlight"><div class="chroma">
+<div class="table-container"><table class="lntable"><tr><td class="lntd">
+<pre class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span></code></pre></td>
+<td class="lntd">
+<pre class="chroma"><code class="language-Java" data-lang="Java"><span class="kd">private</span> <span class="kt">void</span> <span class="nf">mediaEncoder</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">endOfStream</span><span class="o">,</span> <span class="n">MediaCodec</span> <span class="n">mediaCodec</span><span class="o">,</span> <span class="n">MediaCodec</span><span class="o">.</span><span class="na">BufferInfo</span> <span class="n">bufferInfo</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">isVideo</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">final</span> <span class="kt">int</span> <span class="n">TIMEOUT_USEC</span> <span class="o">=</span> <span class="n">20000</span><span class="o">;</span>  <span class="c1">// 等待暂停的时间
+</span><span class="c1"></span>    <span class="k">if</span> <span class="o">(</span><span class="n">DEBUG</span><span class="o">)</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&#34;encoder  video  = &#34;</span> <span class="o">+</span> <span class="n">isVideo</span><span class="o">)</span><span class="o">;</span>
+
+    <span class="c1">// 停止录制直接调用
+</span><span class="c1"></span>    <span class="k">if</span> <span class="o">(</span><span class="n">endOfStream</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">DEBUG</span><span class="o">)</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&#34;sending EOS to encoder&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">isVideo</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">// surface 特有
+</span><span class="c1"></span>            <span class="n">mediaCodec</span><span class="o">.</span><span class="na">signalEndOfInputStream</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="c1">//mAudioEncoder.queueInputBuffer(inputBufferIndex, 0, mAudioFrameSize, presentationTimeUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+</span><span class="c1"></span>        <span class="o">}</span>
+
+    <span class="o">}</span>
+
+    <span class="n">ByteBuffer</span><span class="o">[</span><span class="o">]</span> <span class="n">encoderOutputBuffers</span> <span class="o">=</span> <span class="n">mediaCodec</span><span class="o">.</span><span class="na">getOutputBuffers</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+    <span class="kt">int</span> <span class="n">encoderStatus</span> <span class="o">=</span> <span class="n">mediaCodec</span><span class="o">.</span><span class="na">dequeueOutputBuffer</span><span class="o">(</span><span class="n">bufferInfo</span><span class="o">,</span> <span class="n">TIMEOUT_USEC</span><span class="o">)</span><span class="o">;</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">encoderStatus</span> <span class="o">=</span><span class="o">=</span> <span class="n">MediaCodec</span><span class="o">.</span><span class="na">INFO_TRY_AGAIN_LATER</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">DEBUG</span><span class="o">)</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&#34;INFO_TRY_AGAIN_LATER&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="c1">// no output available yet
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="o">!</span><span class="n">endOfStream</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">DEBUG</span><span class="o">)</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&#34;no output available, spinning to await EOS&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">encoderStatus</span> <span class="o">=</span><span class="o">=</span> <span class="n">MediaCodec</span><span class="o">.</span><span class="na">INFO_OUTPUT_BUFFERS_CHANGED</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// not expected for an encoder
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">DEBUG</span><span class="o">)</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&#34;INFO_OUTPUT_BUFFERS_CHANGED&#34;</span><span class="o">)</span><span class="o">;</span>
+    <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">encoderStatus</span> <span class="o">=</span><span class="o">=</span> <span class="n">MediaCodec</span><span class="o">.</span><span class="na">INFO_OUTPUT_FORMAT_CHANGED</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// should happen before receiving buffers, and should only happen once
+</span><span class="c1"></span>        <span class="n">MediaFormat</span> <span class="n">newFormat</span> <span class="o">=</span> <span class="n">mediaCodec</span><span class="o">.</span><span class="na">getOutputFormat</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+        <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&#34;encoder output format changed: &#34;</span> <span class="o">+</span> <span class="n">newFormat</span><span class="o">)</span><span class="o">;</span>
+
+        <span class="c1">// now that we have the Magic Goodies, start the muxer
+</span><span class="c1"></span>        <span class="k">if</span> <span class="o">(</span><span class="n">isVideo</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">videoTrackIndex</span> <span class="o">=</span> <span class="n">mMuxer</span><span class="o">.</span><span class="na">addTrack</span><span class="o">(</span><span class="n">newFormat</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="n">audioTrackIndex</span> <span class="o">=</span> <span class="n">mMuxer</span><span class="o">.</span><span class="na">addTrack</span><span class="o">(</span><span class="n">newFormat</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="c1">// 混合开始
+</span><span class="c1"></span>        <span class="n">mMuxer</span><span class="o">.</span><span class="na">start</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+
+        <span class="cm">/* if (audioTrackIndex != -1 &amp;&amp; videoTrackIndex != -1) {
+</span><span class="cm">            mMuxer.start();
+</span><span class="cm">        } else {
+</span><span class="cm">            return;
+</span><span class="cm">        }*/</span>
+
+    <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">encoderStatus</span> <span class="o">&lt;</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&#34;unexpected result from encoder.dequeueOutputBuffer: &#34;</span> <span class="o">+</span>
+                <span class="n">encoderStatus</span><span class="o">)</span><span class="o">;</span>
+        <span class="c1">// let&#39;s ignore it
+</span><span class="c1"></span>    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+        <span class="n">ByteBuffer</span> <span class="n">encodedData</span> <span class="o">=</span> <span class="n">encoderOutputBuffers</span><span class="o">[</span><span class="n">encoderStatus</span><span class="o">]</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">encodedData</span> <span class="o">=</span><span class="o">=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">RuntimeException</span><span class="o">(</span><span class="s">&#34;encoderOutputBuffer &#34;</span> <span class="o">+</span> <span class="n">encoderStatus</span> <span class="o">+</span>
+                    <span class="s">&#34; was null&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="o">(</span><span class="n">bufferInfo</span><span class="o">.</span><span class="na">flags</span> <span class="o">&amp;</span> <span class="n">MediaCodec</span><span class="o">.</span><span class="na">BUFFER_FLAG_CODEC_CONFIG</span><span class="o">)</span> <span class="o">!</span><span class="o">=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">// The codec config data was pulled out and fed to the muxer when we got
+</span><span class="c1"></span>            <span class="c1">// the INFO_OUTPUT_FORMAT_CHANGED status.  Ignore it.
+</span><span class="c1"></span>            <span class="k">if</span> <span class="o">(</span><span class="n">DEBUG</span><span class="o">)</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&#34;ignoring BUFFER_FLAG_CODEC_CONFIG&#34;</span><span class="o">)</span><span class="o">;</span>
+            <span class="n">bufferInfo</span><span class="o">.</span><span class="na">size</span> <span class="o">=</span> <span class="n">0</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">DEBUG</span><span class="o">)</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&#34;sent &#34;</span> <span class="o">+</span> <span class="n">bufferInfo</span><span class="o">.</span><span class="na">size</span> <span class="o">+</span> <span class="s">&#34; bytes to muxer&#34;</span><span class="o">)</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">bufferInfo</span><span class="o">.</span><span class="na">size</span> <span class="o">!</span><span class="o">=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+
+            <span class="c1">// adjust the ByteBuffer values to match BufferInfo (not needed?)
+</span><span class="c1"></span>            <span class="n">encodedData</span><span class="o">.</span><span class="na">position</span><span class="o">(</span><span class="n">bufferInfo</span><span class="o">.</span><span class="na">offset</span><span class="o">)</span><span class="o">;</span>
+            <span class="n">encodedData</span><span class="o">.</span><span class="na">limit</span><span class="o">(</span><span class="n">bufferInfo</span><span class="o">.</span><span class="na">offset</span> <span class="o">+</span> <span class="n">bufferInfo</span><span class="o">.</span><span class="na">size</span><span class="o">)</span><span class="o">;</span>
+<span class="cm">/*
+</span><span class="cm">            // 没有初始化完成
+</span><span class="cm">            if (audioTrackIndex == -1 || videoTrackIndex == -1)
+</span><span class="cm">                return;*/</span>
+
+            <span class="k">if</span> <span class="o">(</span><span class="n">mCanRecoder</span><span class="o">)</span> <span class="o">{</span>
+                <span class="c1">// 视频需要计算presentationTimeUs
+</span><span class="c1"></span>                <span class="k">if</span> <span class="o">(</span><span class="n">isVideo</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="c1">// 从暂停中第一次恢复录制
+</span><span class="c1"></span>                    <span class="k">if</span> <span class="o">(</span><span class="n">mVideoFirstResume</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">mVideoFirstResume</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+                        <span class="n">mPauseTime</span> <span class="o">+</span><span class="o">=</span> <span class="n">bufferInfo</span><span class="o">.</span><span class="na">presentationTimeUs</span> <span class="o">-</span> <span class="n">mVideoLastRecordTime</span> <span class="o">-</span> <span class="n">TIMEOUT_USEC</span><span class="o">;</span>
+                        <span class="n">mediaCodec</span><span class="o">.</span><span class="na">flush</span><span class="o">(</span><span class="o">)</span><span class="o">;</span>
+                        <span class="k">return</span><span class="o">;</span>
+                    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                        <span class="n">mVideoLastRecordTime</span> <span class="o">=</span> <span class="n">bufferInfo</span><span class="o">.</span><span class="na">presentationTimeUs</span><span class="o">;</span>
+                        <span class="n">bufferInfo</span><span class="o">.</span><span class="na">presentationTimeUs</span> <span class="o">-</span><span class="o">=</span> <span class="n">mPauseTime</span><span class="o">;</span>
+                        <span class="n">mAudioPresentationTimeUs</span> <span class="o">=</span> <span class="n">bufferInfo</span><span class="o">.</span><span class="na">presentationTimeUs</span><span class="o">;</span>
+                        <span class="n">mMuxer</span><span class="o">.</span><span class="na">writeSampleData</span><span class="o">(</span><span class="n">videoTrackIndex</span><span class="o">,</span> <span class="n">encodedData</span><span class="o">,</span> <span class="n">bufferInfo</span><span class="o">)</span><span class="o">;</span>
+                        <span class="k">if</span> <span class="o">(</span><span class="n">DEBUG</span><span class="o">)</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&#34;sent &#34;</span> <span class="o">+</span> <span class="n">bufferInfo</span><span class="o">.</span><span class="na">size</span> <span class="o">+</span> <span class="s">&#34; bytes to muxer&#34;</span><span class="o">)</span><span class="o">;</span>
+                    <span class="o">}</span>
+                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span> <span class="c1">// 音频直接用视频的presentationTimeUs
+</span><span class="c1"></span>                    <span class="n">mMuxer</span><span class="o">.</span><span class="na">writeSampleData</span><span class="o">(</span><span class="n">audioTrackIndex</span><span class="o">,</span> <span class="n">encodedData</span><span class="o">,</span> <span class="n">bufferInfo</span><span class="o">)</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+
+        <span class="o">}</span>
+
+        <span class="n">mediaCodec</span><span class="o">.</span><span class="na">releaseOutputBuffer</span><span class="o">(</span><span class="n">encoderStatus</span><span class="o">,</span> <span class="kc">false</span><span class="o">)</span><span class="o">;</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="o">(</span><span class="n">bufferInfo</span><span class="o">.</span><span class="na">flags</span> <span class="o">&amp;</span> <span class="n">MediaCodec</span><span class="o">.</span><span class="na">BUFFER_FLAG_END_OF_STREAM</span><span class="o">)</span> <span class="o">!</span><span class="o">=</span> <span class="n">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="o">!</span><span class="n">endOfStream</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">Log</span><span class="o">.</span><span class="na">w</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&#34;reached end of stream unexpectedly&#34;</span><span class="o">)</span><span class="o">;</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">DEBUG</span><span class="o">)</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&#34;end of stream reached&#34;</span><span class="o">)</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+<span class="o">}</span>
+</code></pre></td></tr></table></div>
+</div>
+</div>
+            </div>
+
+        </article>
+
+        
+
+        
+    
+    
+
+
+
+        
+
+
+        
+
+
+        
+
+
+        
+    
+    
+
+
+
+        
+    
+
+
+
+        
+    <footer class="minimal-footer">
+        
+        
+        
+            
+        
+    </footer>
+
+
+
+        
+
+
+        
+    
+        
+        
+    
+    
+    
+    
+        <ul class="post-nav">
+            
+            
+                <li class="post-nav-next">
+                    <a href="/posts/optimize/" rel="next">关于优化 &gt;</a>
+                </li>
+            
+        </ul>
+    
+
+
+
+        
+
+
+    </div>
+</main>
+
+
+            
+    <div id="back-to-top" class="back-to-top">
+        <a href="#"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon arrow-up"><path d="M34.9 289.5l-22.2-22.2c-9.4-9.4-9.4-24.6 0-33.9L207 39c9.4-9.4 24.6-9.4 33.9 0l194.3 194.3c9.4 9.4 9.4 24.6 0 33.9L413 289.4c-9.5 9.5-25 9.3-34.3-.4L264 168.6V456c0 13.3-10.7 24-24 24h-32c-13.3 0-24-10.7-24-24V168.6L69.2 289.1c-9.3 9.8-24.8 10-34.3.4z"/></svg></a>
+    </div>
+
+
+            
+
+        </div>
+        
+
+        
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.0/dist/katex.min.css" integrity="sha384-BdGj8xC2eZkQaxoQ8nSLefg4AV4/AwB3Fj+8SUSo7pnKP6Eoy18liIKTPn9oBYNG" crossorigin="anonymous" />
+<script>
+    if (typeof renderMathInElement === 'undefined') {
+        var getScript = (options) => {
+            var script = document.createElement('script');
+            script.defer = true;
+            script.crossOrigin = 'anonymous';
+            Object.keys(options).forEach((key) => {
+                script[key] = options[key];
+            });
+            document.body.appendChild(script);
+        };
+        getScript({
+            src: 'https://cdn.jsdelivr.net/npm/katex@0.11.0/dist/katex.min.js',
+            integrity: 'sha384-JiKN5O8x9Hhs/UE5cT5AAJqieYlOZbGT3CHws/y97o3ty4R7/O5poG9F3JoiOYw1',
+            onload: () => {
+                getScript({
+                    src: 'https://cdn.jsdelivr.net/npm/katex@0.11.0/dist/contrib/mhchem.min.js',
+                    integrity: 'sha384-oa0lfxCGjaU1LdYckhq8LZcP+JTf8cyJXe69O6VE6UrShzWveT6KiCElJrck/stm',
+                    onload: () => {
+                        getScript({
+                            src: 'https://cdn.jsdelivr.net/npm/katex@0.11.0/dist/contrib/auto-render.min.js',
+                            integrity: 'sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI',
+                            onload: () => {
+                                renderKaTex();
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    } else {
+        renderKaTex();
+    }
+    function renderKaTex() {
+        renderMathInElement(
+            document.body,
+            {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "\\[", right: "\\]", display: true},
+                    {left: "$", right: "$", display: false},
+                    {left: "\\(", right: "\\)", display: false}
+                ]
+            }
+        );
+    }
+</script>
+
+
+
+    <script>
+    if (typeof MathJax === 'undefined') {
+        window.MathJax = {
+            loader: {
+                load: ['[tex]/mhchem']
+            },
+            
+            tex: {
+                inlineMath: {'[+]': [['$', '$']]},
+                tags: 'ams',
+                packages: {'[+]': ['mhchem']}
+            }
+        };
+        (function() {
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.0.1/es5/tex-mml-chtml.js';
+            script.defer = true;
+            document.head.appendChild(script);
+        })();
+    } else {
+        MathJax.texReset();
+        MathJax.typeset();
+    }
+</script>
+
+
+
+
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/medium-zoom@latest/dist/medium-zoom.min.js"></script>
+
+<script>
+    mediumZoom(document.querySelectorAll('div.post-body img'), {
+        background: 'hsla(var(--color-bg-h), var(--color-bg-s), var(--color-bg-l), 0.95)'
+    })
+</script>
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/instant.page@3.0.0/instantpage.min.js" type="module" defer></script>
+
+
+
+
+
+
+
+    </body>
+</html>
